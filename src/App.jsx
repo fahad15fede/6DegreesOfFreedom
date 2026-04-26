@@ -231,21 +231,21 @@ function App(){
       <div ref ={mountRef} className="canvas"></div>
 
       <Panel pos="top-left" title="Move">
-        Q/E → Z<br />
-        A/D → X<br />
-        W/S → Y
+        Q(Forward)↗️/E(Backward)↘️→ Z-axis<br />
+        A(Left)⬅️/D➡️(Right)→ X-axis<br />
+        W(Up)⬆️/S(Down)⬇️→ Y
       </Panel>
       <Panel pos="top-right" title="Rotate">
-        I/K → X<br />
-        J/L → Y<br />
-        U/O → Z
+        I/K(Pitch) → X<br />
+        J/L(Yaw) → Y<br />
+        U/O(Roll) → Z
       </Panel>
       <Panel pos="bottom-left" title="Mouse">
         Drag → Rotate<br />
         Scroll → Zoom
       </Panel>
       <Panel pos="bottom-right" title="Live Data">
-        <b>Distance:</b> <br />
+        <b>Distance from center:</b> <br />
         {info.distance_from_origin} <br /> <br />
 
         <b>Rotation (radians):</b> <br />
