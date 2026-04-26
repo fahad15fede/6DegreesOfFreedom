@@ -231,14 +231,14 @@ function App(){
       <div ref ={mountRef} className="canvas"></div>
 
       <Panel pos="top-left" title="Move">
-        Q(Forward)↗️/E(Backward)↘️→ Z-axis<br />
-        A(Left)⬅️/D➡️(Right)→ X-axis<br />
-        W(Up)⬆️/S(Down)⬇️→ Y
+        Q(Forward)↗️/E(Backward)↘️→[Surge] Z-axis<br />
+        A(Left)⬅️/D➡️(Right)→[Sway] X-axis<br />
+        W(Up)⬆️/S(Down)⬇️[Heave]→ Y-axis
       </Panel>
       <Panel pos="top-right" title="Rotate">
-        I/K(Pitch) → X<br />
-        J/L(Yaw) → Y<br />
-        U/O(Roll) → Z
+        I/K[Pitch] → X<br />
+        J/L[Yaw] → Y<br />
+        U/O[Roll] → Z
       </Panel>
       <Panel pos="bottom-left" title="Mouse">
         Drag → Rotate<br />

@@ -4,14 +4,20 @@
 
 `hoverable` is an interactive React + Three.js web app that demonstrates 3D object manipulation and spatial interaction. The project is designed to explore human-computer interaction (HCI) concepts through a simple, hover-based interface.
 
+## Live Demo
+
+Check the deployed demo at:
+
+- https://6-degrees-of-freedom.vercel.app/
+
 ## Why 6 Degrees of Freedom Matters
 
 In HCI, 6 degrees of freedom (6DoF) refers to the full range of motion available to an object in three-dimensional space:
 
 - **Translation** along the x, y, and z axes:
-  - Move left/right
-  - Move up/down
-  - Move forward/backward
+  - Move left/right(Heave)
+  - Move up/down(Sway)
+  - Move forward/backward(Surge)
 - **Rotation** around the x, y, and z axes:
   - Roll
   - Pitch
@@ -66,6 +72,18 @@ Preview the production build locally:
 ```bash
 npm run preview
 ```
+
+## Recommended System
+
+For the best experience, use a laptop or desktop computer rather than a mobile device. A larger screen and precise pointer control help with spatial interaction and object manipulation.
+
+Minimum system requirements:
+
+- OS: Windows 10/11, macOS, or Linux
+- CPU: Dual-core processor or better
+- RAM: 8 GB minimum
+- Browser: Latest version of Chrome, Edge, or Firefox
+- GPU: Modern integrated graphics or discrete GPU with WebGL support
 
 ## Learn More
 
