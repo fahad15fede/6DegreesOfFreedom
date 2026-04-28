@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { rotate } from "three/src/nodes/utils/RotateNode.js";
 
 
 const Panel = ({pos, title, children})=>{
@@ -32,9 +31,16 @@ function App(){
   ];
   
   const [info, setInfo] = useState({
-    distance_from_origin:0,
-    rotation: {x:0, y:0, z:0},
-    corners:[]
+    playerCubeRadius:0,
+    targetCubeRadius:0,
+    playerCubeRotation: {x:0, y:0, z:0},
+    targetCubeRotation:{x:0, y:0, z:0},
+    playerCorners:[],
+    targetCorners:[],
+    totalCornerError:Infinity,
+    totalRotationError:Infinity,
+    totalPositionError:Infinity,
+    status:"none"
   });
   
   useEffect(()=>{
@@ -60,10 +66,10 @@ function App(){
     controls.enableDamping = true;
 
     //Grid for better coordinates visuals
-    const grid = new THREE.GridHelper(50,50,  '0xffff00', // center line (bright)
+    const grid = new THREE.GridHelper(90,50,  0xffff00, // center line (bright)
   'green' );
-    const grid2 = new THREE.GridHelper(50,50, '0xffff00', 'red');
-    const grid3 = new THREE.GridHelper(50,50, '0xffff00', 'blue');
+    const grid2 = new THREE.GridHelper(90,50, 0xffff00, 'red');
+    const grid3 = new THREE.GridHelper(90,50, 0xffff00, 'blue');
 
     grid2.rotation.x=Math.PI/2;
     grid3.rotation.z=Math.PI/2;
@@ -76,8 +82,9 @@ function App(){
     // const axesHelper = new THREE.AxesHelper(20);
     // scene.add(axesHelper);
 
-    //Cube
-    const geometry = new THREE.BoxGeometry(7,7,7);
+    //playerCube
+    const playerGeometry = new THREE.BoxGeometry(7,7,7);
+    const targetGeometry = new THREE.BoxGeometry(8,8,8);
 
     const materials = [
       
@@ -102,22 +109,59 @@ function App(){
 
     //Bounding box 
     
-    const cube = new THREE.Mesh(geometry, materials);
-    scene.add(cube);
-    const boxHelper = new THREE.BoxHelper(cube, 0xFFFFFF);
+    const playerCube = new THREE.Mesh(playerGeometry, materials);
+    scene.add(playerCube);
+
+    //Target cube
+    const targetMaterial = new THREE.MeshStandardMaterial({
+      color: "white",
+      transparent: false,
+      opacity:0.85,
+      wireframe:false
+    });
+
+    const targetCube = new THREE.Mesh(targetGeometry, targetMaterial);
+
+
+    //Random position of goal cube
+
+    targetCube.position.set(
+        Math.random() * 15 ,
+        Math.random() * 15,
+        Math.random() * 15 
+    );
+
+    //Random rotation of goal cube
+    targetCube.rotation.set(
+      Math.random() * Math.PI,
+      Math.random() * Math.PI,
+      Math.random() * Math.PI
+    );
+
+    scene.add(targetCube);
+
+    const boxHelper = new THREE.BoxHelper(playerCube, 0xFFFFFF);
     scene.add(boxHelper);
 
     //corner markers
 
-    const cornerSpheres = [];
+    const playerCornerSpheres = [];
+    const targetCornerSpheres = [];
 
     for(let i = 0; i < 8; i++){
-      const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25),
+      const playerCornerSphere = new THREE.Mesh(new THREE.SphereGeometry(0.25),
       new THREE.MeshBasicMaterial({color: cornerColors[i]})
     );
 
-    scene.add(sphere);
-    cornerSpheres.push(sphere);
+    scene.add(playerCornerSphere);
+    playerCornerSpheres.push(playerCornerSphere);
+
+     const targetCornerSphere = new THREE.Mesh(new THREE.SphereGeometry(0.25),
+     new THREE.MeshBasicMaterial({color:cornerColors[i]})
+    );
+    scene.add(targetCornerSphere);
+    targetCornerSpheres.push(targetCornerSphere);
+
     }
 
     //Controls
@@ -130,10 +174,10 @@ function App(){
     window.addEventListener("keyup", handleKeyUp);
 
     // Movement speed
-    const moveSpeed = 0.05;
-    const rotSpeed = 0.02;
+    const moveSpeed = 0.1;
+    const rotSpeed = 0.017;
 
-    const getCorners = () =>{
+    const getCorners = (cube) =>{
       const pos = cube.geometry.attributes.position;
       const unique = new Set();
       const result = [];
@@ -157,57 +201,129 @@ function App(){
 
     //Animate
     const animate = () =>{
-      const corners = getCorners();
+      const playerCorners = getCorners(playerCube);
+      const targetCorners = getCorners(targetCube);
+
+      
       requestAnimationFrame(animate);
       controls.update();
       boxHelper.update();
 
       // 🔹 Translation (Position)
-      if (keys["q"]) cube.position.z -= moveSpeed; // forward
-      if (keys["e"]) cube.position.z += moveSpeed; // backward
-      if (keys["a"]) cube.position.x -= moveSpeed; // left
-      if (keys["d"]) cube.position.x += moveSpeed; // right
-      if (keys["w"]) cube.position.y += moveSpeed; // up
-      if (keys["s"]) cube.position.y -= moveSpeed; // down
-
+      if (keys["q"]) playerCube.position.z -= moveSpeed; // forward
+      if (keys["e"]) playerCube.position.z += moveSpeed; // backward
+      if (keys["a"]) playerCube.position.x -= moveSpeed; // left
+      if (keys["d"]) playerCube.position.x += moveSpeed; // right
+      if (keys["w"]) playerCube.position.y += moveSpeed; // up
+      if (keys["s"]) playerCube.position.y -= moveSpeed; // down
+      
       // 🔹 Rotation
-      if (keys["i"]) cube.rotation.x -= rotSpeed; // rotate X
-      if (keys["k"]) cube.rotation.x += rotSpeed;
-      if (keys["j"]) cube.rotation.y -= rotSpeed; // rotate Y
-      if (keys["l"]) cube.rotation.y += rotSpeed;
-      if (keys["u"]) cube.rotation.z -= rotSpeed; // rotate Z
-      if (keys["o"]) cube.rotation.z += rotSpeed;
+      if (keys["i"]) playerCube.rotation.x -= rotSpeed; // rotate X
+      if (keys["k"]) playerCube.rotation.x += rotSpeed;
+      if (keys["j"]) playerCube.rotation.y -= rotSpeed; // rotate Y
+      if (keys["l"]) playerCube.rotation.y += rotSpeed;
+      if (keys["u"]) playerCube.rotation.z -= rotSpeed; // rotate Z
+      if (keys["o"]) playerCube.rotation.z += rotSpeed;
       
       //Info updates
-      const distance_from_origin = cube.position.length();
+      const playerCubeRadius = playerCube.position.length();
+      const targetCubeRadius = targetCube.position.length();
       
-      const rotation = {
-        x:cube.rotation.x,
-        y:cube.rotation.y,
-        z:cube.rotation.z,
+      const playerCubeRotation = {
+        x:playerCube.rotation.x,
+        y:playerCube.rotation.y,
+        z:playerCube.rotation.z,
+      };
+      
+      //Error calculation
+      const totalPositionError = Math.abs(targetCubeRadius - playerCubeRadius);
+      const targetRotX = parseFloat(targetCube.rotation.x.toFixed(2));
+      const targetRotY = parseFloat(targetCube.rotation.y.toFixed(2));
+      const targetRotZ = parseFloat(targetCube.rotation.z.toFixed(2));
+      const playerRotX = parseFloat(playerCube.rotation.x.toFixed(2));
+      const playerRotY = parseFloat(playerCube.rotation.y.toFixed(2));
+      const playerRotZ = parseFloat(playerCube.rotation.z.toFixed(2));
+
+      const angleDiff=(a, b)=>{
+        let diff = Math.abs(a-b);
+        return(Math.min(diff, Math.PI*2-diff));
       };
 
-      setInfo({
-        distance_from_origin:distance_from_origin.toFixed(2),
+      const totalRotationError = angleDiff(playerRotX, targetRotX)+angleDiff(playerRotY, targetRotY)+angleDiff(playerRotZ, targetRotZ);
 
-        rotation:{
-        x:rotation.x.toFixed(2),
-        y:rotation.y.toFixed(2),
-        z:rotation.z.toFixed(2),
+      let totalCornerError = 0;
+      for(let i = 0; i < 8; i++){
+        totalCornerError += playerCorners[i].distanceTo(targetCorners[i]);
+      }
+      
+      //Display status
+      let status = "none";
+      if (totalPositionError < 0.5 && totalRotationError < 0.2){
+        status = "perfect";
+      } 
+      else if(totalPositionError < 2 && totalRotationError < 0.6){
+        status = "near";
+      } 
+      else {
+        status = "far";
+      }
+
+      setInfo({
+        playerCubeRadius: playerCubeRadius.toFixed(2),
+        targetCubeRadius: targetCubeRadius.toFixed(2),
+        
+        playerCubeRotation: {
+          x: playerRotX,
+          y: playerRotY,
+          z: playerRotZ,
         },
-        corners: corners.map(c => ({
+        
+        targetCubeRotation: {
+          x: targetRotX,
+          y: targetRotY,
+          z: targetRotZ,
+        },
+        
+        playerCorners: playerCorners.map(c => ({
           x: c.x.toFixed(2),
           y: c.y.toFixed(2),
           z: c.z.toFixed(2)
-        }))
+        })),
+        
+        targetCorners: targetCorners.map(c => ({
+          x: c.x.toFixed(2),
+          y: c.y.toFixed(2),
+          z: c.z.toFixed(2)
+        })),
+        
+        totalPositionError: totalPositionError.toFixed(2),
+        totalRotationError: totalRotationError.toFixed(2),
+        totalCornerError: totalCornerError.toFixed(2),
+        status: status
       });
 
 
-      corners.forEach((corner, i)=>{
-          if(cornerSpheres[i]){
-            cornerSpheres[i].position.copy(corner);
+      playerCorners.forEach((corner, i)=>{
+          if(playerCornerSpheres[i]){
+            playerCornerSpheres[i].position.copy(corner);
           }
       });
+
+      targetCorners.forEach((corner, i)=>{
+          if(targetCornerSpheres[i]){
+            targetCornerSpheres[i].position.copy(corner);
+          }
+      });
+
+      if(status == "far"){
+        targetCube.material.color.set(0xff0000);
+      }
+      else if(status == "near"){
+        targetCube.material.color.set(0xffff00);
+      }
+      else if(status == "perfect"){
+        targetCube.material.color.set(0x00ff00);
+      }
 
       renderer.render(scene, camera);
     };
@@ -234,28 +350,49 @@ function App(){
         Q(Forward)↗️/E(Backward)↘️→[Surge] Z-axis<br />
         A(Left)⬅️/D➡️(Right)→[Sway] X-axis<br />
         W(Up)⬆️/S(Down)⬇️[Heave]→ Y-axis
+
+        Drag → Rotate<br />
+        Scroll → Zoom
       </Panel>
       <Panel pos="top-right" title="Rotate">
         I/K[Pitch] → X<br />
         J/L[Yaw] → Y<br />
         U/O[Roll] → Z
       </Panel>
-      <Panel pos="bottom-left" title="Mouse">
-        Drag → Rotate<br />
-        Scroll → Zoom
-      </Panel>
-      <Panel pos="bottom-right" title="Live Data">
-        <b>Distance from center:</b> <br />
-        {info.distance_from_origin} <br /> <br />
+      <Panel pos="bottom-left" title="Target Data">
+        <b>Target Radius:</b> <br />
+        {info.targetCubeRadius} <br />
 
-        <b>Rotation (radians):</b> <br />
-        X: {info.rotation.x} <br />
-        Y: {info.rotation.y} <br />
-        Z: {info.rotation.z} <br />
+        <b>Target Cube Rotation (radians):</b> <br />
+        X: {info.targetCubeRotation.x} <br />
+        Y: {info.targetCubeRotation.y} <br />
+        Z: {info.targetCubeRotation.z} <br />
+
+      <b>Coordinates(Vectors):</b> <br />
+
+        {info.targetCorners.map((c, i) => (
+          <div key={i}>
+            P{i + 1}: ({c.x}, {c.y}, {c.z})
+          </div>
+        ))}
+
+
+
+      </Panel>
+      <Panel pos="bottom-right" title="Player Data">
+
+        <b>Player Radius:</b> <br />
+        {info.playerCubeRadius} <br /> <br />
+
+        <b>Player Cube Rotation (radians):</b> <br />
+        X: {info.playerCubeRotation.x} <br />
+        Y: {info.playerCubeRotation.y} <br />
+        Z: {info.playerCubeRotation.z} <br />
+
 
         <b>Coordinates(Vectors):</b> <br />
 
-        {info.corners.map((c, i) => (
+        {info.playerCorners.map((c, i) => (
           <div key={i}>
             P{i + 1}: ({c.x}, {c.y}, {c.z})
           </div>
