@@ -25,11 +25,26 @@
   border-radius: 10px;
   font-size: 13px;
   line-height: 1.5;
-  min-width: 180px;
+  min-width: 200px;
 
   backdrop-filter: blur(6px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.panel{
+  font-size: 13px;
+}
+.panel-title {
+  font-size: 20px;
+  color: white;
+}
+
+.subTitles{
+  font-size: 14px;
+}
+.subTitlesSpecial{
+  font-size: 20px;
 }
 
 /* Positions */

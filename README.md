@@ -2,7 +2,7 @@
 
 ## Overview
 
-`hoverable` is an interactive React + Three.js web app that demonstrates 3D object manipulation and spatial interaction. The project is designed to explore human-computer interaction (HCI) concepts through a simple, hover-based interface.
+`Hoverable` is an interactive 3D experiment built with React and Three.js designed to help users learn and practice the concepts of 6 degrees of freedom (6DoF) in three-dimensional space. Through direct manipulation of a virtual cube, users can explore spatial positioning, rotation, and alignment in an intuitive, visual environment.
 
 ## Live Demo
 
@@ -10,36 +10,72 @@ Check the deployed demo at:
 
 - https://6-degrees-of-freedom.vercel.app/
 
-## Why 6 Degrees of Freedom Matters
+## Learning Objectives
 
-In HCI, 6 degrees of freedom (6DoF) refers to the full range of motion available to an object in three-dimensional space:
+This experiment helps you understand:
 
-- **Translation** along the x, y, and z axes:
-  - Move left/right(Heave)
-  - Move up/down(Sway)
-  - Move forward/backward(Surge)
-- **Rotation** around the x, y, and z axes:
-  - Roll
-  - Pitch
-  - Yaw
+- **6 Degrees of Freedom (6DoF)**: The complete range of motion in 3D space
+- **Translation (Position)**:
+  - **Sway**: Movement along the lateral (X) axis (left/right)
+  - **Heave**: Movement along the vertical (Y) axis (up/down)
+  - **Surge**: Movement along the longitudinal (Z) axis (forward/backward)
+- **Rotation (Orientation)**:
+  - **Pitch**: Rotation around the lateral (X) axis
+  - **Yaw**: Rotation around the vertical (Y) axis
+  - **Roll**: Rotation around the longitudinal (Z) axis
 
-For interactive systems, 6DoF is a core concept because it defines how users perceive and control objects within virtual environments, augmented reality, and 3D user interfaces.
+## How to Use the Experiment
+
+The experiment presents you with two cubes in a 3D scene:
+
+- **Player Cube**: A colored cube you control (red, green, blue faces indicate orientation)
+- **Target Cube**: A semi-transparent white cube with a random position and rotation
+
+Your task is to manipulate the player cube to match the target's spatial properties. Use the information panels to guide your adjustments:
+
+1. **Position Matching**: Adjust the player cube's position to minimize the "Position Error" (difference in distance from origin)
+2. **Rotation Matching**: Rotate the player cube to align with the target's orientation, reducing "Rotation Error"
+3. **Visual Alignment**: Use the colored corner spheres to visually align the cubes
+4. **Status Feedback**: Monitor the status indicator:
+   - "Far": Significant misalignment in position or rotation
+   - "Near": Close to alignment
+   - "Perfect": Successfully matched position and rotation
+
+The experiment provides real-time feedback through numerical error values and status updates, helping you develop spatial intuition and control precision.
+
+## Controls
+
+### Translation Controls
+- **Q/E**: Surge (forward/backward movement along Z-axis)
+- **A/D**: Sway (left/right movement along X-axis)
+- **W/S**: Heave (up/down movement along Y-axis)
+
+### Rotation Controls
+- **I/K**: Pitch (rotation around X-axis)
+- **J/L**: Yaw (rotation around Y-axis)
+- **U/O**: Roll (rotation around Z-axis)
+
+### Camera Controls
+- **Drag**: Rotate camera view
+- **Scroll**: Zoom in/out
+
+## Features
+
+- Real-time 3D visualization with Three.js
+- Precise control over 6DoF movement
+- Visual feedback with corner markers
+- Quantitative error measurements
+- Educational information panels
+- Randomized target configurations
 
 ## HCI Relevance
 
-This project connects 6DoF with HCI principles by focusing on:
+This experiment demonstrates key HCI principles:
 
-- **Spatial awareness:** Users learn how objects exist in 3D space and how movement in different directions affects interaction.
-- **Direct manipulation:** Hovering and moving objects mimics natural gestures, making interfaces more intuitive.
-- **Affordances:** Visual and interaction cues show what actions are possible, reducing cognitive load for users.
-- **Feedback:** Immediate visual changes provide users with confirmation of their actions and help them understand the relationship between input and motion.
-
-## Project Features
-
-- Responsive 3D scene built with Three.js
-- Object highlights on hover
-- Intuitive interaction patterns for moving and rotating the cube
-- React-based UI for fast development and experimentability
+- **Spatial Cognition**: Building mental models of 3D space
+- **Motor Learning**: Developing fine motor control for 3D interfaces
+- **Feedback Design**: Using visual and numerical cues for user guidance
+- **Direct Manipulation**: Immediate, predictable responses to user input
 
 ## Installation
 
@@ -47,7 +83,17 @@ From the `hoverable` folder:
 
 ```bash
 npm install
+npm run dev
 ```
+
+Open your browser to `http://localhost:5173` (or the port shown in terminal).
+
+## Technologies
+
+- React
+- Three.js
+- Vite
+- JavaScript/ES6
 
 ## Running Locally
 

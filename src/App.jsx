@@ -6,7 +6,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 const Panel = ({pos, title, children})=>{
   return(
     <div className={`panel ${pos}`}>
-      <b>{title}</b> <br />
+      <b className="panel-title">{title}</b> <br />
       {children}
     </div>
   );
@@ -346,29 +346,33 @@ function App(){
 
       <div ref ={mountRef} className="canvas"></div>
 
-      <Panel pos="top-left" title="Move">
-        Q(Forward)↗️/E(Backward)↘️→[Surge] Z-axis<br />
+      <Panel pos="top-left" title="Move Shape"> <br />
         A(Left)⬅️/D➡️(Right)→[Sway] X-axis<br />
-        W(Up)⬆️/S(Down)⬇️[Heave]→ Y-axis
+        W(Up)⬆️/S(Down)⬇️[Heave]→ Y-axis <br />
+        Q(Forward)↗️/E(Backward)↘️→[Surge] Z-axis <br /> <br />
+
+        <b className="subTitlesSpecial">Move Camera</b> <br /> 
 
         Drag → Rotate<br />
         Scroll → Zoom
       </Panel>
       <Panel pos="top-right" title="Rotate">
+        <br />
         I/K[Pitch] → X<br />
         J/L[Yaw] → Y<br />
         U/O[Roll] → Z
       </Panel>
       <Panel pos="bottom-left" title="Target Data">
-        <b>Target Radius:</b> <br />
-        {info.targetCubeRadius} <br />
+        <br />
+        <b className="subTitles">Target Radius:</b> <br /> 
+        {info.targetCubeRadius} <br /> <br />
 
-        <b>Target Cube Rotation (radians):</b> <br />
+        <b className="subTitles">Target Cube Rotation (radians):</b> <br />
         X: {info.targetCubeRotation.x} <br />
         Y: {info.targetCubeRotation.y} <br />
-        Z: {info.targetCubeRotation.z} <br />
+        Z: {info.targetCubeRotation.z} <br /> <br />
 
-      <b>Coordinates(Vectors):</b> <br />
+      <b className="subTitles">Coordinates(Vectors):</b> <br />
 
         {info.targetCorners.map((c, i) => (
           <div key={i}>
@@ -381,16 +385,17 @@ function App(){
       </Panel>
       <Panel pos="bottom-right" title="Player Data">
 
-        <b>Player Radius:</b> <br />
+        <br />
+        <b className="subTitles">Player Radius:</b> <br /> 
         {info.playerCubeRadius} <br /> <br />
 
-        <b>Player Cube Rotation (radians):</b> <br />
+        <b className="subTitles">Player Cube Rotation (radians):</b> <br />
         X: {info.playerCubeRotation.x} <br />
         Y: {info.playerCubeRotation.y} <br />
-        Z: {info.playerCubeRotation.z} <br />
+        Z: {info.playerCubeRotation.z} <br /> <br />
 
 
-        <b>Coordinates(Vectors):</b> <br />
+        <b className="subTitles">Coordinates(Vectors):</b> <br />
 
         {info.playerCorners.map((c, i) => (
           <div key={i}>
