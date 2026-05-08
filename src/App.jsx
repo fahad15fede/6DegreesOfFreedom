@@ -206,11 +206,6 @@ function App(){
     //Animate
     let animationId;
     const animate = () =>{
-
-    const now = performance.now();
-
-    if(now - lastUIUpdate > 100){
-      lastUIUpdate = now;
       console.log(gestureRef.current);
       const playerCorners = getCorners(playerCube);
       const targetCorners = getCorners(targetCube);
@@ -361,10 +356,7 @@ function App(){
 
       renderer.render(scene, camera);
     };
-  }
-
-    let lastUIUpdate = 0;
-
+      
     animate();
 
     //Clean Up
