@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { HandLandmarker, FilesetResolver} from "@mediapipe/tasks-vision";
 
 
 const Panel = ({pos, title, children})=>{
@@ -18,6 +19,9 @@ const Panel = ({pos, title, children})=>{
 
 function App(){
   const mountRef = useRef(null);
+  const videoRef = useRef(null);
+  const gestureRef = useRef("none");  
+  const [gesture, setGesture] = useState("none");
 
   const cornerColors =[
       0xff0000, // red
@@ -187,7 +191,7 @@ function App(){
 
         v.applyMatrix4(cube.matrixWorld);
 
-        const key = `${v.x.toFixed(3)}_${v.y.toFixed(3)}_${v.z.toFixed(3)}}`;
+        const key = `${v.x.toFixed(3)}_${v.y.toFixed(3)}_${v.z.toFixed(3)}`;
 
         if(!unique.has(key)){
           unique.add(key);
@@ -200,12 +204,19 @@ function App(){
     };
 
     //Animate
+    let animationId;
     const animate = () =>{
+
+    const now = performance.now();
+
+    if(now - lastUIUpdate > 100){
+      lastUIUpdate = now;
+      console.log(gestureRef.current);
       const playerCorners = getCorners(playerCube);
       const targetCorners = getCorners(targetCube);
 
       
-      requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
       controls.update();
       boxHelper.update();
 
@@ -224,6 +235,27 @@ function App(){
       if (keys["l"]) playerCube.rotation.y += rotSpeed;
       if (keys["u"]) playerCube.rotation.z -= rotSpeed; // rotate Z
       if (keys["o"]) playerCube.rotation.z += rotSpeed;
+
+      //gesture movements
+      if(gestureRef.current === "forward"){
+        playerCube.position.z -= moveSpeed;
+      }
+      if(gestureRef.current === "backward"){
+        playerCube.position.z += moveSpeed;
+      }
+      if(gestureRef.current === "right"){
+        playerCube.position.x -= moveSpeed;
+      }
+      if(gestureRef.current === "left"){
+        playerCube.position.x += moveSpeed;
+      }
+      if(gestureRef.current === "up"){
+        playerCube.position.y += moveSpeed;
+      }
+      if(gestureRef.current === "down"){
+        playerCube.position.y -= moveSpeed;
+      }
+
       
       //Info updates
       const playerCubeRadius = playerCube.position.length();
@@ -253,7 +285,9 @@ function App(){
 
       let totalCornerError = 0;
       for(let i = 0; i < 8; i++){
-        totalCornerError += playerCorners[i].distanceTo(targetCorners[i]);
+        if(playerCorners[i] && targetCorners[i]){
+          totalCornerError += playerCorners[i].distanceTo(targetCorners[i]);
+        }
       }
       
       //Display status
@@ -315,36 +349,205 @@ function App(){
           }
       });
 
-      if(status == "far"){
+      if(status === "far"){
         targetCube.material.color.set(0xff0000);
       }
-      else if(status == "near"){
+      else if(status === "near"){
         targetCube.material.color.set(0xffff00);
       }
-      else if(status == "perfect"){
+      else if(status === "perfect"){
         targetCube.material.color.set(0x00ff00);
       }
 
       renderer.render(scene, camera);
     };
+  }
+
+    let lastUIUpdate = 0;
 
     animate();
 
     //Clean Up
     return()=>{
+      cancelAnimationFrame(animationId);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      
+      // Dispose Three.js resources
+      playerGeometry.dispose();
+      targetGeometry.dispose();
+      materials.forEach(m => m.dispose());
+      targetMaterial.dispose();
+      
+      playerCornerSpheres.forEach(sphere => {
+        sphere.geometry.dispose();
+        sphere.material.dispose();
+      });
+      targetCornerSpheres.forEach(sphere => {
+        sphere.geometry.dispose();
+        sphere.material.dispose();
+      });
+      
+      boxHelper.geometry.dispose();
+      boxHelper.material.dispose();
+      grid.geometry.dispose();
+      grid.material.dispose();
+      grid2.geometry.dispose();
+      grid2.material.dispose();
+      grid3.geometry.dispose();
+      grid3.material.dispose();
+      light.dispose();
+      renderer.dispose();
+      controls.dispose();
+      
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }
+
+      if(videoRef.current?.srcObject){
+        const tracks = videoRef.current.srcObject.getTracks();
+
+      tracks.forEach(track => track.stop());
+}
     };
 
+  }, []);
+
+  useEffect(()=>{
+
+    let handLandmarker;
+
+    async function setUpHands() {
+        //start webcam
+
+        const stream = await navigator.mediaDevices.getUserMedia({video:true,});
+
+        videoRef.current.srcObject = stream;
+
+        await videoRef.current.play();
+
+        //media vision setup
+        const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
+
+        // create a hand detector
+        handLandmarker = await HandLandmarker.createFromOptions(vision,
+          {
+            baseOptions:{
+              modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+            },
+            runningMode:"VIDEO",
+            numHands:2,
+          }
+        );
+
+        detectHands();
+    }
+
+    function detectHands(){
+      async function frameLoop() {
+
+        if(!videoRef.current || !handLandmarker){
+          requestAnimationFrame(frameLoop);
+          return;
+        }
+
+        const results = handLandmarker.detectForVideo(
+          videoRef.current,
+          performance.now()
+        );
+
+        if(results.landmarks && results.landmarks.length > 0){
+
+          const landmarks = results.landmarks[0];
+
+            // fingertips
+            const indexTip = landmarks[8];
+            const middleTip = landmarks[12];
+            const ringTip = landmarks[16];
+            const pinkyTip = landmarks[20];
+
+
+            // finger joints
+            const indexPip = landmarks[6];
+            const middlePip = landmarks[10];
+            const ringPip = landmarks[14];
+            const pinkyPip = landmarks[18];
+
+            //thumb
+            // const thumbTip = landmarks[4];
+            // const thumbIp = landmarks[3];
+            // const thumbMcp = landmarks[2];
+
+
+            //finger states
+            const indexOpen = indexTip.y< indexPip.y;
+
+            const middleOpen = middleTip.y < middlePip.y;
+
+            const ringOpen = ringTip.y < ringPip.y;
+
+            const pinkyOpen = pinkyTip.y < pinkyPip.y;
+
+            // const thumbUp = thumbTip.y < thumbMcp.y;
+
+            // const thumbDown = thumbTip.y > thumbMcp.y;
+
+            //gestures
+            if(indexOpen && middleOpen && ringOpen && pinkyOpen) {
+              gestureRef.current = "forward";
+              setGesture("forward");
+            }
+            else if(!indexOpen && !middleOpen && !ringOpen && !pinkyOpen ){
+              gestureRef.current = "backward";
+              setGesture("backward");
+            }
+            else if(indexOpen && !middleOpen && !ringOpen && !pinkyOpen ){
+              gestureRef.current = "right";
+              setGesture("right");
+            }
+            else if(!indexOpen && !middleOpen && !ringOpen && pinkyOpen){
+              gestureRef.current = "left";
+              setGesture("left");
+            }
+            else if(indexOpen && middleOpen && !ringOpen && !pinkyOpen){
+              gestureRef.current = "up";
+              setGesture("up");
+            }
+            else if(indexOpen && middleOpen && ringOpen && !pinkyOpen){
+              gestureRef.current = "down";
+              setGesture("down");
+            }
+            else{
+              gestureRef.current = "none";
+              setGesture("none");
+            }
+        }else{
+              gestureRef.current = "none";
+              setGesture("none");
+        }
+
+        requestAnimationFrame(frameLoop);
+        
+      }
+
+      frameLoop();
+    }
+    setUpHands();
   }, []);
 
   return(
     <div className="container">
 
       <div ref ={mountRef} className="canvas"></div>
+
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        width={640}
+        height={480}
+        className="webcam"
+      />
 
       <Panel pos="top-left" title="Move Shape"> <br />
         A(Left)⬅️/D➡️(Right)→[Sway] X-axis<br />
@@ -380,9 +583,12 @@ function App(){
           </div>
         ))}
 
+        <b className="subTitles">Gesture:</b> <br /> {gesture}
+
 
 
       </Panel>
+{/* 
       <Panel pos="bottom-right" title="Player Data">
 
         <br />
@@ -402,7 +608,7 @@ function App(){
             P{i + 1}: ({c.x}, {c.y}, {c.z})
           </div>
         ))}
-       </Panel>
+       </Panel> */}
     </div>
   );
 }
