@@ -542,20 +542,28 @@ function App(){
       />
 
       <Panel pos="top-left" title="Move Shape"> <br />
+        <b>Keyboard</b> <br />
         A(Left)⬅️/D➡️(Right)→[Sway] X-axis<br />
         W(Up)⬆️/S(Down)⬇️[Heave]→ Y-axis <br />
         Q(Forward)↗️/E(Backward)↘️→[Surge] Z-axis <br /> <br />
+        <b>Gestures</b> <br />
+        Index(Left)⬅️/Pinky➡️(Right)→[Sway] X-axis<br />
+        First two fingers(Up)⬆️/First three fingers(Down)⬇️[Heave]→ Y-axis <br />
+        Open palm(Forward)↗️/Closed fist(Backward)↘️→[Surge] Z-axis <br /> <br />
 
-        <b className="subTitlesSpecial">Move Camera</b> <br /> 
 
-        Drag → Rotate<br />
-        Scroll → Zoom
+
+
       </Panel>
       <Panel pos="top-right" title="Rotate">
         <br />
         I/K[Pitch] → X<br />
         J/L[Yaw] → Y<br />
-        U/O[Roll] → Z
+        U/O[Roll] → Z <br /> <br />
+        <b className="subTitlesSpecial">Move Camera</b> <br /> 
+
+        Drag → Rotate<br />
+        Scroll → Zoom
       </Panel>
       <Panel pos="bottom-left" title="Target Data">
         <br />
@@ -575,12 +583,8 @@ function App(){
           </div>
         ))}
 
-        <b className="subTitles">Gesture:</b> <br /> {gesture}
-
-
-
       </Panel>
-{/* 
+
       <Panel pos="bottom-right" title="Player Data">
 
         <br />
@@ -600,7 +604,9 @@ function App(){
             P{i + 1}: ({c.x}, {c.y}, {c.z})
           </div>
         ))}
-       </Panel> */}
+        <br />
+        <b className="subTitles">Gesture:</b> <br /> {gesture}
+       </Panel> 
     </div>
   );
 }
