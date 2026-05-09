@@ -104,3 +104,54 @@ button:hover {
   width: 150px;
   border-radius: 12px;
 }
+
+/* ===== MOBILE ===== */
+
+@media (max-width: 768px){
+
+  .panel{
+    font-size:11px;
+    padding:8px;
+    max-width:140px;
+  }
+
+  .webcam{
+    width:140px;
+    top:5px;
+  }
+
+  .top-left{
+    top:160px;
+    left:5px;
+  }
+
+  .top-right{
+    top:160px;
+    right:5px;
+  }
+
+  .bottom-left{
+    bottom:5px;
+    left:5px;
+  }
+
+  .bottom-right{
+    bottom:5px;
+    right:5px;
+  }
+}
+
+/* ===== EXTRA SMALL DEVICES ===== */
+
+@media (max-width: 480px){
+
+  .panel{
+    font-size:10px;
+    max-width:120px;
+    padding:6px;
+  }
+
+  .webcam{
+    width:120px;
+  }
+}
