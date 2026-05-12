@@ -18,10 +18,25 @@ const Panel = ({pos, title, children})=>{
 
 
 function App(){
+  const [showInstructions, setShowInstructions] = useState(false);
   const mountRef = useRef(null);
   const videoRef = useRef(null);
   const gestureRef = useRef("none");  
   const [gesture, setGesture] = useState("none");
+  const [mode, setMode] = useState("move");
+  const modeRef = useRef("move");
+  const playerCubeRef = useRef();
+  const targetCubeRef = useRef();
+  const rotationRef = useRef({
+  x: 0,
+  y: 0,
+  z: 0,
+});
+
+  const [time, setTime] = useState(0);
+
+  const timerStartedRef = useRef(false);
+  const timerIntervalRef = useRef(null);
 
   const cornerColors =[
       0xff0000, // red
@@ -46,6 +61,34 @@ function App(){
     totalPositionError:Infinity,
     status:"none"
   });
+
+    const resetPlayerCube = () => {
+      if (!playerCubeRef.current) return;
+
+      resetTimer();
+
+      playerCubeRef.current.position.set(0,0,0);
+
+      playerCubeRef.current.rotation.set(0,0,0);
+    };
+
+      const startTimer = () => {
+        if (timerStartedRef.current) return;
+
+        timerStartedRef.current = true;
+
+        timerIntervalRef.current = setInterval(() => {
+          setTime(prev => prev + 1);
+        }, 1000);
+      };
+
+      const resetTimer = () => {
+        clearInterval(timerIntervalRef.current);
+
+        timerStartedRef.current = false;
+
+        setTime(0);
+      };
   
   useEffect(()=>{
     //Scene
@@ -127,6 +170,9 @@ function App(){
 
     const targetCube = new THREE.Mesh(targetGeometry, targetMaterial);
 
+    playerCubeRef.current = playerCube;
+    targetCubeRef.current = targetCube;
+
 
     //Random position of goal cube
 
@@ -175,12 +221,28 @@ function App(){
     const handleKeyDown = (e) =>(keys[e.key.toLowerCase()] = true);
     const handleKeyUp = (e) =>(keys[e.key.toLowerCase()]=false);
 
+    const handleModeSwitch = (e) => {
+
+      if(e.key === "m"){
+        setMode("move");
+          modeRef.current = "move";
+      }
+
+      if(e.key === "r"){
+        setMode("rotate");
+        modeRef.current = "rotate";
+
+      }
+
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", handleModeSwitch);
 
     // Movement speed
-    const moveSpeed = 0.1;
-    const rotSpeed = 0.017;
+    const moveSpeed = 0.18;
+    const rotSpeed = 0.023;
 
     const getCorners = (cube) =>{
       const pos = cube.geometry.attributes.position;
@@ -204,6 +266,8 @@ function App(){
 
     };
 
+
+
     //Animate
     let animationId;
     const animate = () =>{
@@ -215,6 +279,25 @@ function App(){
       animationId = requestAnimationFrame(animate);
       controls.update();
       boxHelper.update();
+
+      //Timer start logic
+      const keyboardMoving =
+        keys["q"] ||
+        keys["e"] ||
+        keys["a"] ||
+        keys["d"] ||
+        keys["w"] ||
+        keys["s"] ||
+        keys["i"] ||
+        keys["k"] ||
+        keys["j"] ||
+        keys["l"] ||
+        keys["u"] ||
+        keys["o"];
+
+      if (keyboardMoving) {
+        startTimer();
+      }
 
       // 🔹 Translation (Position)
       if (keys["q"]) playerCube.position.z -= moveSpeed; // forward
@@ -232,6 +315,10 @@ function App(){
       if (keys["u"]) playerCube.rotation.z -= rotSpeed; // rotate Z
       if (keys["o"]) playerCube.rotation.z += rotSpeed;
 
+      //Start timer on gesture movement
+      if (gestureRef.current !== "none") {
+        startTimer();
+      }
       //gesture movements
       if(gestureRef.current === "forward"){
         playerCube.position.z -= moveSpeed;
@@ -250,9 +337,28 @@ function App(){
       }
       if(gestureRef.current === "down"){
         playerCube.position.y -= moveSpeed;
+      } 
+      if(gestureRef.current === "Rotate-X"){
+        playerCube.rotation.x += rotationRef.current.x * 0.1;
+      }
+      if(gestureRef.current === "Rotate+X"){
+        playerCube.rotation.x += rotationRef.current.x * -0.1;
+      }
+      if(gestureRef.current === "Rotate-Y"){
+        playerCube.rotation.y += rotationRef.current.y * 0.4;
+      }
+      if(gestureRef.current === "Rotate+Y"){
+        playerCube.rotation.y -= rotationRef.current.y * 0.2;
+      }
+      if(gestureRef.current === "Rotate-Z"){
+        playerCube.rotation.z += rotationRef.current.z * 0.01;
+      }
+      if(gestureRef.current === "Rotate+Z"){
+        playerCube.rotation.z += rotationRef.current.z * -0.01;
       }
 
-      
+
+            
       //Info updates
       const playerCubeRadius = playerCube.position.length();
       const targetCubeRadius = targetCube.position.length();
@@ -353,6 +459,7 @@ function App(){
       }
       else if(status === "perfect"){
         targetCube.material.color.set(0x00ff00);
+        clearInterval(timerIntervalRef.current);
       }
 
       renderer.render(scene, camera);
@@ -365,6 +472,7 @@ function App(){
       cancelAnimationFrame(animationId);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", handleModeSwitch);
       
       // Dispose Three.js resources
       playerGeometry.dispose();
@@ -444,6 +552,12 @@ function App(){
           return;
         }
 
+        // DEFAULT VALUES
+        let isPinching = false;
+        let dx = 0;
+        let dy = 0;
+        let angleZ = 0;
+
         const results = handLandmarker.detectForVideo(
           videoRef.current,
           performance.now()
@@ -453,23 +567,27 @@ function App(){
 
           const landmarks = results.landmarks[0];
 
+
+           // finger joints
+            const indexPip = landmarks[6];
+            const middleMcp = landmarks[9];
+            const middlePip = landmarks[10];
+            const ringPip = landmarks[14];
+            const pinkyPip = landmarks[18];
             // fingertips
+
             const indexTip = landmarks[8];
             const middleTip = landmarks[12];
             const ringTip = landmarks[16];
             const pinkyTip = landmarks[20];
 
-
-            // finger joints
-            const indexPip = landmarks[6];
-            const middlePip = landmarks[10];
-            const ringPip = landmarks[14];
-            const pinkyPip = landmarks[18];
-
-            //thumb
+            // thumb
             // const thumbTip = landmarks[4];
             // const thumbIp = landmarks[3];
             // const thumbMcp = landmarks[2];
+
+            //wrist
+            const wrist = landmarks[0];
 
 
             //finger states
@@ -485,6 +603,21 @@ function App(){
 
             // const thumbDown = thumbTip.y > thumbMcp.y;
 
+            // const pinchDistance = Math.hypot(
+            // thumbTip.x - indexTip.x,
+            // thumbTip.y - indexTip.y,
+            // thumbTip.z - indexTip.z
+            // );  
+
+            dx = middleMcp.x - wrist.x;
+            dy = middleMcp.y - wrist.y;
+            angleZ = Math.atan2(
+              pinkyTip.y - indexTip.y,
+              pinkyTip.x - indexTip.x
+            );
+            // isPinching = pinchDistance < 0.05;
+
+          if(modeRef.current === "move"){
             //gestures
             if(indexOpen && middleOpen && ringOpen && pinkyOpen) {
               gestureRef.current = "forward";
@@ -514,19 +647,73 @@ function App(){
               gestureRef.current = "none";
               setGesture("none");
             }
-        }else{
-              gestureRef.current = "none";
+          } else if(modeRef.current === "rotate"){
+
+            gestureRef.current = "none";
+
+            // reset all first
+            rotationRef.current.x = 0;
+            rotationRef.current.y = 0;
+            rotationRef.current.z = 0;
+
+            if(indexOpen && middleOpen && ringOpen && pinkyOpen){
+                  rotationRef.current.x = dy;
+                  gestureRef.current = "Rotate-X";
+                  setGesture("Rotate-X");
+            }
+            else if(!indexOpen && !middleOpen && !ringOpen && !pinkyOpen){
+                  rotationRef.current.x = dy;
+                  gestureRef.current = "Rotate+X";
+                  setGesture("Rotate+X");
+            }
+            else if(indexOpen && !middleOpen && !ringOpen && !pinkyOpen){
+                  rotationRef.current.y = dx;
+                  gestureRef.current = "Rotate-Y";
+                  setGesture("Rotate-Y");
+            }
+            else if(!indexOpen && !middleOpen && !ringOpen && pinkyOpen){
+                  rotationRef.current.y = dx;
+                  gestureRef.current = "Rotate+Y";
+                  setGesture("Rotate+Y");
+            }
+            else if(indexOpen && middleOpen && !ringOpen && !pinkyOpen){
+                  rotationRef.current.z = angleZ;
+                  gestureRef.current = "Rotate-Z";
+                  setGesture("Rotate-Z");
+            }
+            else if(indexOpen && middleOpen && ringOpen && !pinkyOpen){
+                  rotationRef.current.z = angleZ;
+                  gestureRef.current = "Rotate+Z";
+                  setGesture("Rotate+Z");
+            }
+            else{
               setGesture("none");
+              gestureRef.current = "none";
+            }
+          } 
+        } else {
+          gestureRef.current = "none";
+          setGesture("none");
+          rotationRef.current.x = 0;
+          rotationRef.current.y = 0;
+          rotationRef.current.z = 0;
         }
 
         requestAnimationFrame(frameLoop);
-        
       }
 
       frameLoop();
     }
     setUpHands();
   }, []);
+
+  const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+};
+
 
   return(
     <div className="container">
@@ -542,11 +729,67 @@ function App(){
         className="webcam"
       />
 
-      <Panel pos="top-left" title="Move Shape"> <br />
+      <div className="timer-box">
+        ⏱ {formatTime(time)}
+      </div>
+
+      <button
+        className="instructions-toggle"
+        onClick={() => setShowInstructions(!showInstructions)}
+      >
+        {showInstructions ? "✖ Close" : "☰ Instructions"}
+      </button>
+
+      <div className={`instructions-sidebar ${showInstructions ? "open" : ""}`}>
+  
+        <h2>Controls & Instructions</h2>
+
+        <div className="instruction-section">
+          <h3>Movement Keys</h3>
+
+          <p>W / S → Up & Down</p>
+          <p>A / D → Left & Right</p>
+          <p>Q / E → Forward & Backward</p>
+        </div>
+
+        <div className="instruction-section">
+          <h3>Rotation Keys</h3>
+
+          <p>I / K → Rotate X</p>
+          <p>J / L → Rotate Y</p>
+          <p>U / O → Rotate Z</p>
+        </div>
+
+        <div className="instruction-section">
+          <h3>Gesture Controls</h3>
+
+          <p>Open Palm → Forward</p>
+          <p>Closed Fist → Backward</p>
+          <p>Index Finger → Right</p>
+          <p>Pinky Finger → Left</p>
+          <p>2 Fingers → Up</p>
+          <p>3 Fingers → Down</p>
+        </div>
+
+        <div className="instruction-section">
+          <h3>Modes</h3>
+
+          <p>M → Move Mode</p>
+          <p>R → Rotate Mode</p>
+        </div>
+      </div>
+        <button
+        className="reset-btn"
+        onClick={resetPlayerCube}
+      >
+        Reset Cube
+      </button>
+      
+      {/* <Panel pos="top-left" title="Move Shape"> <br />
         <b>Keyboard</b> <br />
         A(Left)⬅️/D➡️(Right)→[Sway] X-axis<br />
         W(Up)⬆️/S(Down)⬇️[Heave]→ Y-axis <br />
-        Q(Forward)↗️/E(Backward)↘️→[Surge] Z-axis <br /> <br />
+        Q(Forward)↗️/E(Backward)↘️→[Surge] Z-axis <br />
         <b>Gestures</b> <br />
         Index(Left)⬅️/Pinky➡️(Right)→[Sway] X-axis<br />
         First two fingers(Up)⬆️/First three fingers(Down)⬇️[Heave]→ Y-axis <br />
@@ -555,16 +798,17 @@ function App(){
 
 
 
-      </Panel>
-      <Panel pos="top-right" title="Rotate">
-        <br />
+      </Panel> */}
+      <Panel pos="top-right" title="Move Camera">
+        {/* <br />
         I/K[Pitch] → X<br />
         J/L[Yaw] → Y<br />
-        U/O[Roll] → Z <br /> <br />
-        <b className="subTitlesSpecial">Move Camera</b> <br /> 
-
+        U/O[Roll] → Z <br /> <br /> */}
+        <br />
         Drag → Rotate<br />
-        Scroll → Zoom
+        Scroll → Zoom <br /> <br />
+        <b className="subTitles">Mode</b> <br />
+        <b>{mode}</b> 
       </Panel>
       <Panel pos="bottom-left" title="Target Data">
         <br />
@@ -582,7 +826,9 @@ function App(){
           <div key={i}>
             P{i + 1}: ({c.x}, {c.y}, {c.z})
           </div>
-        ))}
+        ))} <br />
+        <b className="subTitles">Status:</b> <br /> {info.status}
+
 
       </Panel>
 
