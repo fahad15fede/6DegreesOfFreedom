@@ -1,5 +1,7 @@
 # Hoverable: 3D Cube Matching Game with 6DOF Control
 
+🔗 **[Live Demo](https://6-degrees-of-freedom.vercel.app/)**
+
 ## Project Overview
 
 Hoverable is an interactive 3D cube-matching game built with React, Three.js, and MediaPipe. The player controls a cube using **keyboard input** and **real-time hand gestures** detected through a webcam. The goal is to position and rotate the player cube until it matches a randomized target cube in 3D space.
@@ -523,7 +525,9 @@ hoverable/
 ---
 
 ## Author
-Created by Miss Humera Tariq for HCI-CG (Human-Computer Interaction & Computer Graphics)
+Created by **Muhammad Fahad Pervez** for HCI-CG (Human-Computer Interaction & Computer Graphics)
+
+Instructor: Miss Humera Tariq
 
 ## 3. Gesture Controls
 
